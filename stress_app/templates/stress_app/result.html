@@ -1,0 +1,227 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result — Stress Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+<div class="bg-overlay"></div>
+
+<div class="page-wrapper">
+
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🧠</span>
+            <span class="logo-text">NeuroStress<span class="logo-ai">AI</span></span>
+        </div>
+        <a href="{% url 'home' %}" class="header-back">← Back to Home</a>
+    </header>
+
+    <main class="result-main">
+        <div class="result-container">
+
+            <div class="result-header">
+                <h2 class="result-title">Analysis Complete</h2>
+                {% if not face_found %}
+                <div style="background:#f59e0b22;border:1px solid #f59e0b;border-radius:8px;padding:10px 16px;margin-top:10px;color:#b45309;font-size:13px;">
+                    ⚠️ No face detected clearly — result may be inaccurate. Try better lighting or face the camera directly.
+                </div>
+                {% endif %}
+                <div class="result-scan-bar"></div>
+            </div>
+
+            <div class="result-grid">
+
+                <!-- Image Panel -->
+                <div class="result-image-panel">
+                    <div class="image-frame">
+                        <div class="scan-overlay"></div>
+                        <img src="{{ image_url }}" alt="Analyzed Face" class="result-img">
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
+                    </div>
+                    <p class="image-caption">📸 Analyzed Image</p>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="result-info-panel">
+
+                    <!-- Stress Status -->
+                    <div class="stress-status {% if 'NOT' in stress %}calm{% else %}stressed{% endif %}">
+                        <div class="status-icon">
+                            {% if 'NOT' in stress %}😊{% else %}😤{% endif %}
+                        </div>
+                        <div class="status-text">
+                            <span class="status-label">STRESS STATUS</span>
+                            <span class="status-value">{{ stress }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Emotion -->
+                    <div class="result-metric">
+                        <span class="metric-label">Detected Emotion</span>
+                        <span class="metric-value emotion-value">{{ emotion|upper }}</span>
+                    </div>
+
+                    <!-- Confidence Bar -->
+                    <div class="result-metric">
+                        <div class="metric-header">
+                            <span class="metric-label">Confidence Level</span>
+                            <span class="metric-value">{{ confidence }}%</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: {{ confidence }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- AI Mood Booster -->
+                    <div class="funny-section">
+                        <button class="btn-funny" onclick="getComment()" id="commentBtn">
+                            🤖 Get AI Mood Booster
+                        </button>
+                        <div class="comment-box" id="commentBox">
+                            <div class="comment-header">
+                                <span>🤖 AI Says...</span>
+                                <button class="refresh-btn" onclick="getComment()">🔄 Another</button>
+                            </div>
+                            <p class="comment-text" id="commentText"></p>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="result-actions">
+                        <a href="{% url 'home' %}" class="btn-primary result-btn">
+                            <span>Try Another</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </a>
+                        <a href="{% url 'webcam' %}" class="btn-secondary result-btn">
+                            <span>Use Webcam</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M20 7h-3.28A2 2 0 0 0 15 6H9a2 2 0 0 0-1.72 1H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Stress Detection using Machine Learning &nbsp;|&nbsp; CNN Model &nbsp;|&nbsp; FER2013 Dataset &nbsp;|&nbsp; Minor Project 2025-26</p>
+    </footer>
+</div>
+
+<script>
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.top = Math.random() * 100 + 'vh';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.animationDuration = (6 + Math.random() * 8) + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+        container.appendChild(p);
+    }
+
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.querySelector('.confidence-fill').style.transition = 'width 1.5s cubic-bezier(0.4,0,0.2,1)';
+        }, 300);
+    });
+
+    const comments = {
+        angry: [
+            "😤 Bro chill! Even WiFi disconnects sometimes — doesn't mean you smash the router!",
+            "🔥 You look like you just saw your ex's Instagram story. Have a samosa, it helps!",
+            "😂 Anger detected! Quick, call your mom — she'll fix you in exactly 2 minutes!",
+            "💆 Even volcanoes cool down eventually. You will too, king!",
+            "😡 Take a deep breath... your enemies are not worth your blood pressure, bhai!",
+            "You look angrier than a WiFi router that's been restarted 10 times! 😂",
+            "Even your mom's 'wait till dad comes home' was less scary than this face 💀",
+            "Bro someone ate your tiffin didn't they 😤",
+            "That face when the auto driver says 'meter nahi chalta' 🚕😡",
+        ],
+        disgusted: [
+            "🤢 Did someone show you their old WhatsApp forwards again? Block them immediately!",
+            "😂 You look like you just opened a 3-year-old tiffin box. Fresh air will fix you!",
+            "🤮 Disgusted? Relax — at least you didn't sit in a 3-hour boring lecture today!",
+            "😬 Cheer up! Even toilets get cleaned eventually. Things WILL get better!",
+            "🙈 That face tells me you just ate hostel food. You'll survive, champion!",
+            "That face when someone forwards a 5 minute voice note instead of just texting 🎤💀",
+            "You look like you just tasted Maggi made without the masala packet 🍜😬",
+            "Bro you look like you just saw your attendance percentage 📊💀"
+        ],
+        fearful: [
+            "😱 Don't worry! Your exam results can't be worse than your WiFi speed during viva!",
+            "👻 Scared? Even ghosts are afraid of your pending assignments — you're tougher!",
+            "😰 Relax! Your mom survived worse and still made hot chapati. You got this!",
+            "🎃 Even professors don't know the answer sometimes — they just Google it quietly!",
+            "😨 You have survived every bad day so far. That's a 100% success rate! 💪",
+            "That face when WhatsApp shows 'typing...' from your parents 💀",
+            "Bro you look like you just remembered you have a pending assignment due in 1 hour 😱",
+        ],
+        happy: [
+            "😊 Look at you glowing! Did your crush finally text back or did CGPA cross 8? 👀",
+            "🎉 You're so happy, even your attendance percentage is jealous right now!",
+            "😄 Let me guess — free food in canteen? Or did someone return money they borrowed?",
+            "🥳 You look like you submitted the assignment 5 minutes before deadline and it worked!",
+            "🌟 Keep that energy! You look like WiFi just connected after 3 hours of buffering!",
+            "You're radiating 'internship got selected' energy right now! 🎉",
+            "That smile when the strict teacher is absent and substitute says 'free period' 😄",
+        ],
+        neutral: [
+            "😐 Neutral face detected. You have the energy of a Monday 8AM lecture — pure survival!",
+            "🫥 You look like a government employee on their last day before retirement. Respect!",
+            "😑 Bro, even a stone has more expression. Blink twice if you need emotional support!",
+            "🙂 Neutral mood? You're between chai and coffee — completely understandable!",
+            "😶 Your face says 'I answered the exam but have no idea if it's right'. Very relatable!",
+            "That face when someone asks 'what's your plan for life' at family functions 😐",
+        ],
+        sad: [
+            "😢 Don't worry! Even Virat Kohli gets out for a duck. Your innings is just starting!",
+            "💔 Feeling sad? Your future self is looking back at this moment and laughing. Trust it!",
+            "😭 Cheer up! Someone loves you deeply — probably your mom. Call her RIGHT NOW!",
+            "🥺 Watch one funny reel + eat one biscuit = 60% better. Scientifically proven!",
+            "😿 Even the moon disappears for a few days every month. But it always comes back shining! 🌕",
+            "Bro even your playlist switched to Arijit Singh automatically 🎵💀",
+        ],
+        surprised: [
+            "😲 Shocked? Did your professor actually cancel class or did someone return money they owe?",
+            "🤯 That face! Did your project actually run on the FIRST try?! Screenshot it — rare event!",
+            "😳 You look like you just checked your bank balance after a weekend trip with friends!",
+            "🫨 Surprised? Let me guess — someone in your group actually did their part of the project!",
+            "😮 That expression screams 'I got a WhatsApp text from my crush at 2AM'. Spill the tea! ☕",
+        ]
+    };
+
+    function getComment() {
+        const emotion = "{{ emotion }}".toLowerCase();
+        const list = comments[emotion] || comments["neutral"];
+        const picked = list[Math.floor(Math.random() * list.length)];
+
+        const box  = document.getElementById('commentBox');
+        const text = document.getElementById('commentText');
+        const btn  = document.getElementById('commentBtn');
+
+        box.style.display = 'block';
+        text.style.opacity = '0';
+        text.style.transform = 'translateY(6px)';
+        btn.textContent = '🤖 Another One!';
+
+        setTimeout(() => {
+            text.textContent = picked;
+            text.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            text.style.opacity = '1';
+            text.style.transform = 'translateY(0)';
+        }, 150);
+    }
+</script>
+</body>
+</html>

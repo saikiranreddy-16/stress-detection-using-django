@@ -1,0 +1,177 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Webcam — Stress Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+<div class="bg-overlay"></div>
+
+<div class="page-wrapper">
+
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🧠</span>
+            <span class="logo-text">NeuroStress<span class="logo-ai">AI</span></span>
+        </div>
+        <a href="{% url 'home' %}" class="header-back">← Back to Home</a>
+    </header>
+
+    <main class="webcam-main">
+        <div class="webcam-container">
+
+            <div class="webcam-header">
+                <h2 class="result-title">Live Webcam Detection</h2>
+                <div class="live-badge">
+                    <span class="pulse-dot red"></span>
+                    LIVE
+                </div>
+            </div>
+
+            <div class="webcam-grid">
+
+                <!-- Camera Feed -->
+                <div class="camera-panel">
+                    <div class="camera-frame">
+                        <video id="video" autoplay playsinline></video>
+                        <div class="camera-corners">
+                            <div class="corner tl"></div>
+                            <div class="corner tr"></div>
+                            <div class="corner bl"></div>
+                            <div class="corner br"></div>
+                        </div>
+                        <div class="camera-scan-line" id="scanLine"></div>
+                        <div class="camera-status" id="camStatus">
+                            <span class="pulse-dot red"></span>
+                            Camera Initializing...
+                        </div>
+                    </div>
+
+                    <div class="camera-controls">
+                        <button class="btn-primary capture-btn" onclick="capture()" id="captureBtn" disabled>
+                            <span>📸 Capture &amp; Analyze</span>
+                        </button>
+                        <a href="{% url 'home' %}" class="btn-secondary result-btn">
+                            <span>← Home</span>
+                        </a>
+                    </div>
+
+                    <p class="camera-tip">💡 Tip: Face the camera directly with good lighting for best results</p>
+                </div>
+
+                <!-- Instructions Panel -->
+                <div class="instructions-panel">
+                    <h3 class="inst-title">How It Works</h3>
+
+                    <div class="inst-steps">
+                        <div class="inst-step">
+                            <div class="step-num">1</div>
+                            <div class="step-text">
+                                <strong>Allow Camera</strong>
+                                <p>Click "Allow" when browser asks for camera permission</p>
+                            </div>
+                        </div>
+                        <div class="inst-step">
+                            <div class="step-num">2</div>
+                            <div class="step-text">
+                                <strong>Position Your Face</strong>
+                                <p>Look directly at camera in good lighting</p>
+                            </div>
+                        </div>
+                        <div class="inst-step">
+                            <div class="step-num">3</div>
+                            <div class="step-text">
+                                <strong>Capture &amp; Analyze</strong>
+                                <p>Click the capture button to analyze your stress level</p>
+                            </div>
+                        </div>
+                        <div class="inst-step">
+                            <div class="step-num">4</div>
+                            <div class="step-text">
+                                <strong>Get Results</strong>
+                                <p>View your emotion and stress status instantly</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="emotion-mini-legend">
+                        <div class="mini-stressed">
+                            <span>😤 STRESSED</span>
+                            <div>Angry · Disgusted · Fearful · Sad</div>
+                        </div>
+                        <div class="mini-calm">
+                            <span>😊 NOT STRESSED</span>
+                            <div>Happy · Neutral · Surprised</div>
+                        </div>
+                    </div>
+
+                    <div class="model-badge">
+                        <span>🤖 CNN Model</span>
+                        <span>⚡ FER2013</span>
+                        <span>🎯 ~80% Accuracy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Stress Detection using Machine Learning &nbsp;|&nbsp; CNN Model &nbsp;|&nbsp; FER2013 Dataset &nbsp;|&nbsp; Minor Project 2025-26</p>
+    </footer>
+</div>
+
+<!-- Django requires CSRF token for POST forms -->
+<form id="webcamForm" action="{% url 'predict_webcam' %}" method="POST" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="image" id="imageInput">
+</form>
+
+<script>
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.top = Math.random() * 100 + 'vh';
+        p.style.animationDelay = Math.random() * 8 + 's';
+        p.style.animationDuration = (6 + Math.random() * 8) + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+        container.appendChild(p);
+    }
+
+    const video = document.getElementById('video');
+    const status = document.getElementById('camStatus');
+    const captureBtn = document.getElementById('captureBtn');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            status.innerHTML = '<span class="pulse-dot red"></span> Camera Active';
+            captureBtn.disabled = false;
+            captureBtn.style.opacity = '1';
+        })
+        .catch(() => {
+            status.innerHTML = '❌ Camera access denied';
+        });
+
+    function capture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        document.getElementById('imageInput').value = canvas.toDataURL('image/jpeg');
+
+        captureBtn.innerHTML = '<span>⏳ Analyzing...</span>';
+        captureBtn.disabled = true;
+
+        setTimeout(() => document.getElementById('webcamForm').submit(), 500);
+    }
+</script>
+</body>
+</html>
